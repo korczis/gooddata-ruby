@@ -105,6 +105,24 @@ module GoodData::Command
       def build(options={})
         GoodData::Model::ProjectCreator.migrate(:spec => options[:spec], :token => options[:token])
       end
+
+      def validate_project(pid)
+        url = "/gdc/md/#{pid}/validate"
+        params = {
+          'validateProject' => %w(IO LDM PDM)
+        }
+
+        result = GoodData.post(url, params)
+        status = GoodData.get(result["uri"])["validateResult"]["state"]
+        while status != "FINISHED"
+          sleep 5
+          validation_result = GoodData.get(result["uri"])
+          status = validation_result["validateResult"]["state"]
+        end
+
+        result = validation_result["validateResult"]["status"] == "OK"
+        [result, validation_result]
+      end
     end
   end
 end

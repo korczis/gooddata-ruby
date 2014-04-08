@@ -141,6 +141,19 @@ GoodData::CLI.module_eval do
 
       end
     end
-  end
 
+    c.desc 'Validate project'
+    c.command :validate do |validate|
+      validate.action do |global_options, options, args|
+        opts = options.merge(global_options)
+        GoodData.connect(opts)
+
+        pid = global_options[:project_id]
+        spec, pid = GoodData::Command::Projects.get_spec_and_project_id('.') if pid.nil? || pid.empty?
+        fail 'Project ID has to be provided' if pid.nil? || pid.empty?
+
+        res = GoodData::Command::Projects.validate_project(pid)
+      end
+    end
+  end
 end
