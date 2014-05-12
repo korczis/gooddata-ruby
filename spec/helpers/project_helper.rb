@@ -3,10 +3,10 @@
 # Global requires
 require 'multi_json'
 
+require 'gooddata/models/models'
+
 # Local requires
 require_relative 'connection_helper'
-
-require 'gooddata/models/models'
 
 module ProjectHelper
   def self.load_project_name
