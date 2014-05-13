@@ -36,11 +36,9 @@ module GoodData
 
     def wait_for_polling_result(polling_url, done_matcher = PollingResult::DEFAULT)
       polling_result = GoodData.get(polling_url)
-      pp polling_result
       while polling_result.deep_include?(done_matcher) == false
         sleep(3)
         polling_result = GoodData.get(polling_url)
-        pp polling_result
       end
       polling_result
     end
