@@ -1,8 +1,9 @@
 # encoding: UTF-8
 
+require 'csv'
+require 'fileutils'
 require 'pmap'
 require 'zip'
-require 'fileutils'
 
 require_relative 'process'
 require_relative '../exceptions/no_project_error'
@@ -82,7 +83,7 @@ module GoodData
                 'driver' => attributes[:driver] || 'Pg'
               }
             }
-          }
+        }
 
         json['project']['meta']['projectTemplate'] = attributes[:template] if attributes[:template] && !attributes[:template].empty?
         project = Project.new json
@@ -157,8 +158,20 @@ module GoodData
     # Adds user to project
     #
     # TODO: Discuss with @fluke777 if is not #invite sufficient
-    def add_user(email_address, domain)
-      fail 'Not implemented'
+    def add_user(user, roles)
+      url = "#{uri}/users"
+      payload = {
+        'user' => {
+          'content' => {
+            'status' => 'ENABLED',
+            'userRoles' => roles
+          },
+          'links' => {
+            'self' => user.uri
+          }
+        }
+      }
+      GoodData.post url, payload
     end
 
     # Returns web interface URI of project
@@ -260,14 +273,23 @@ module GoodData
       Dashboard.all.map { |data| Dashboard[data['link']] }.each { |d| d.delete }
     end
 
+    # Exports project users to file
+    def export_users(path)
+      header = %w(email login first_name last_name status)
+      GoodData::Helpers.csv_write(:path => path, :header => header, :data => users) do |user|
+        [user.email, user.login, user.first_name, user.last_name, user.status]
+      end
+    end
+
     # Gets project role by its identifier
     #
     # @param [String] role_name Title of role to look for
     # @return [GoodData::ProjectRole] Project role if found
-    def get_role_by_identifier(role_name)
-      tmp = roles
-      tmp.each do |role|
-        return role if role.identifier.downcase == role_name.downcase
+    def get_role_by_identifier(role_name, role_list = roles)
+      role_name = role_name.downcase.gsub(/role$/, '')
+      role_list.each do |role|
+        tmp_role_name = role.identifier.downcase.gsub(/role$/, '')
+        return role if tmp_role_name == role_name
       end
       nil
     end
@@ -276,9 +298,8 @@ module GoodData
     #
     # @param [String] role_summary Summary of role to look for
     # @return [GoodData::ProjectRole] Project role if found
-    def get_role_by_summary(role_summary)
-      tmp = roles
-      tmp.each do |role|
+    def get_role_by_summary(role_summary, role_list = roles)
+      role_list.each do |role|
         return role if role.summary.downcase == role_summary.downcase
       end
       nil
@@ -288,12 +309,112 @@ module GoodData
     #
     # @param [String] role_title Title of role to look for
     # @return [GoodData::ProjectRole] Project role if found
-    def get_role_by_title(role_title)
-      tmp = roles
-      tmp.each do |role|
+    def get_role_by_title(role_title, role_list = roles)
+      role_list.each do |role|
         return role if role.title.downcase == role_title.downcase
       end
       nil
+    end
+
+    # Exports project users to file
+    def import_users(path, opts = { :header => true }, &block)
+      opts[:path] = path
+
+      ##########################
+      # Caching/Cached objects
+      ##########################
+      domains = {}
+      current_users = users
+      role_list = roles
+
+      ##########################
+      # Load users from CSV
+      ##########################
+      new_users = GoodData::Helpers.csv_read(opts) do |row|
+        json = {}
+        if block_given?
+          json = yield row
+        else
+          json = {
+            'user' => {
+              'content' => {
+                'email' => row[0],
+                'login' => row[1],
+                'firstname' => row[2],
+                'lastname' => row[3]
+              },
+              'meta' => {}
+            }
+          }
+        end
+
+        GoodData::User.new(json)
+      end
+
+      ##########################
+      # Diff users
+      ##########################
+      diff = GoodData::User.diff_list(current_users, new_users)
+
+      ##########################
+      # Create new users
+      ##########################
+      diff[:added].map do |user|
+        # TODO: Add user here
+        domain_name = user.json['user']['content']['domain']
+
+        # Lookup for domain in cache'
+        domain = domains[domain_name]
+
+        # Get domain info from REST, add to cache
+        if domain.nil?
+          domain = {
+            :domain => GoodData::Domain[domain_name],
+            :users => GoodData::Domain[domain_name].users
+          }
+
+          domain[:users_map] = Hash[domain[:users].map { |u| [u.email, u] }]
+          domains[domain_name] = domain
+        end
+
+        # Check if user exists in domain
+        domain_user = domain[:users_map][user.email]
+
+        # Create domain user if needed
+        unless domain_user
+          password = user.json['user']['content']['password']
+
+          # Fill necessary user data
+          user_data = {
+            :login => user.login,
+            :firstName => user.first_name,
+            :lastName => user.last_name,
+            :password => password,
+            :verifyPassword => password,
+            :email => user.login
+          }
+
+          # Add created user to cache
+          domain_user = domain[:domain].add_user(user_data)
+          domain[:users] << domain_user
+          domain[:users_map][user.email] = domain_user
+        end
+
+        # Lookup for role
+        role_name = user.json['user']['content']['role'] || 'readOnlyUser'
+        role = get_role_by_identifier(role_name, role_list)
+        next if role.nil?
+
+        # Assign user project role
+        add_user(domain_user, [role.uri])
+      end
+
+      ##########################
+      # Remove old users
+      ##########################
+      diff[:removed].map do |user|
+        user.disable(self)
+      end
     end
 
     # Initializes object instance from raw wire JSON
