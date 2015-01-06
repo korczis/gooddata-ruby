@@ -4,7 +4,7 @@ require 'rest-client'
 
 require_relative '../helpers/auth_helpers'
 
-require_relative 'connections/connections'
+require_relative 'connection'
 require_relative 'object_factory'
 
 require_relative '../mixins/inspector'
@@ -19,13 +19,16 @@ module GoodData
       #################################
       # Constants
       #################################
-      DEFAULT_CONNECTION_IMPLEMENTATION = Connections::RestClientConnection
+      DEFAULT_CONNECTION_IMPLEMENTATION = GoodData::Rest::Connection
 
       RETRYABLE_ERRORS = [
-        SystemCallError,
         RestClient::InternalServerError,
-        RestClient::RequestTimeout
+        RestClient::RequestTimeout,
+        SystemCallError,
+        Timeout::Error
       ]
+
+      RETRYABLE_ERRORS << Net::ReadTimeout if Net.const_defined?(:ReadTimeout)
 
       #################################
       # Class variables
@@ -66,6 +69,11 @@ module GoodData
         # @param password [String] Password to be used for authentication
         # @return [GoodData::Rest::Client] Client
         def connect(username, password, opts = { :verify_ssl => true })
+          if username.nil? && password.nil?
+            username = ENV['GD_GEM_USER']
+            password = ENV['GD_GEM_PASSWORD']
+          end
+
           new_opts = opts.dup
           if username.is_a?(Hash) && username.key?(:sst_token)
             new_opts[:sst_token] = username[:sst_token]
