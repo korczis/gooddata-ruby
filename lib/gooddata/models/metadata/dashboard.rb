@@ -61,7 +61,8 @@ module GoodData
         }
       end
 
-      def create(options = {})
+      def create(options = {:tabs => []})
+        options = {:tabs => []}.merge(options)
         stuff = {
           'projectDashboard' => {
             'content' => {

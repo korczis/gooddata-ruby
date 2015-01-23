@@ -67,7 +67,7 @@ module GoodData
     end
 
     def project
-      @project ||= Project[uri.gsub(%r{\/obj\/\d+$}, ''), :client => client]
+      @project ||= uri ? Project[uri.gsub(%r{\/obj\/\d+$}, ''), :client => client] : nil
     end
 
     def saved?
@@ -75,13 +75,13 @@ module GoodData
       !res
     end
 
-    def save
+    def save(opts = { :client => GoodData.client, :project => GoodData.project })
       fail('Validation failed') unless validate
 
       opts = {
         :client => client,
         :project => project
-      }
+      }.merge(opts)
 
       if saved?
         client.put(uri, to_json)

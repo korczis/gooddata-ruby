@@ -48,5 +48,13 @@ module GoodData
         client.create(Attribute, { 'attribute' => attribute }, project: project)
       end
     end
+
+    def entries
+      content['entries'].map do |entry|
+        key = entry.keys.first
+        client.create(GoodData::MdObject, {key.to_s => entry[key]}, project: project)
+      end
+    end
+
   end
 end
