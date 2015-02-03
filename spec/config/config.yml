@@ -1,0 +1,12 @@
+---
+global:
+  username: gem.user@gooddata.com
+  password: jindrisska
+  server: https://secure.gooddata.com
+  domain: gooddata-gem-user
+staging:
+  server: https://staging.getgooddata.com
+  pid: kbgr7wvv1d9zvdycjmpr53rfvuk9mi2g
+production:
+  server: https://secure.gooddata.com
+  pid: zhh0i2vcm5y089v3rdjon9yx11n9kbsc

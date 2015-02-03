@@ -103,7 +103,8 @@ module GoodData
       # Connect using username and password
       def connect(username, password, options = {})
         server = options[:server] || DEFAULT_URL
-        @server = RestClient::Resource.new server, DEFAULT_LOGIN_PAYLOAD
+        server_opts = DEFAULT_LOGIN_PAYLOAD.merge(options)
+        @server = RestClient::Resource.new server, server_opts
 
         # Install at_exit handler first
         unless @at_exit_handler_installed

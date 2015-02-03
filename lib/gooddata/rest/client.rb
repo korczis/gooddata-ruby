@@ -21,6 +21,9 @@ module GoodData
       #################################
       DEFAULT_CONNECTION_IMPLEMENTATION = GoodData::Rest::Connection
 
+      DEFAULT_CONNECT_OPTIONS = {
+        :verify_ssl => false
+      }
       #################################
       # Class variables
       #################################
@@ -59,7 +62,9 @@ module GoodData
         # @param username [String] Username to be used for authentication
         # @param password [String] Password to be used for authentication
         # @return [GoodData::Rest::Client] Client
-        def connect(username, password, opts = { :verify_ssl => true })
+        def connect(username, password, opts = DEFAULT_CONNECT_OPTIONS)
+          opts = DEFAULT_CONNECT_OPTIONS.merge(opts)
+
           if username.nil? && password.nil?
             username = ENV['GD_GEM_USER']
             password = ENV['GD_GEM_PASSWORD']
