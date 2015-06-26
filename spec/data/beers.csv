@@ -1,0 +1,13 @@
+beer_id,brewery_id,name,alcohol,link,created_at
+1, 3, "Anchor IPA", 6.5, "http://www.anchorbrewing.com/beer/anchor_ipa", "01/01/2014"
+2, 3, "Anchor Steam", 4.9, "http://www.anchorbrewing.com/beer/anchor_steam", "01/01/2014"
+3, 3, "Anchor California Lager", 4.9, "http://www.anchorbrewing.com/beer/california_lager", "01/01/2014"
+4, 3, "Liberty ALE", 5.9, "http://www.anchorbrewing.com/beer/liberty_ale", "01/01/2014"
+5, 3, "Anchor Porter", 5.6, "http://www.anchorbrewing.com/beer/anchor_porter", "01/01/2014"
+6, 3, "Old Foghorn ALE", 9, "http://www.anchorbrewing.com/beer/old_foghorn", "01/01/2014"
+7, 3, "Brekle's Brown", 6, "http://www.anchorbrewing.com/beer/brekles_brown", "01/01/2014"
+8, 3, "Anchor Saison", 7.2, "http://www.anchorbrewing.com/beer/anchor_saison", "01/01/2014"
+9, 3, "Anchor Summer Wheat", 4.5, "http://www.anchorbrewing.com/beer/summer_beer", "01/01/2014"
+10, 3, "Bigleaf Maple Autumn Red", 6, "http://www.anchorbrewing.com/beer/bigleaf_maple_red", "01/01/2014"
+11, 3, "Anchor Winter Wheat", 7, "http://www.anchorbrewing.com/beer/anchor_winter_wheat", "01/01/2014"
+12, 3, "Christmas ALE", 5, "http://www.anchorbrewing.com/beer/christmas_ale", "01/01/2014"

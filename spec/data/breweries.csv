@@ -1,0 +1,7 @@
+brewery_id,name,link,created_at
+1, "21st Amendment Brewery", "http://21st-amendment.com/", "06/23/2015"
+2, "Almanac Beer Company", "http://www.almanacbeer.com/", "06/23/2015"
+3, "Anchor Brewing Company", "http://www.anchorbrewing.com/", "06/23/2015"
+4, "Ballast Point Brewing Company", "http://www.ballastpoint.com/", "06/23/2015"
+5, "San Francisco Brewing Company", "http://www.ballastpoint.com/", "06/23/2015"
+6, "Speakeasy Ales and Lagers", "http://www.goodbeer.com/", "06/23/2015"
