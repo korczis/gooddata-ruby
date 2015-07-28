@@ -31,6 +31,17 @@ module GoodData
       Rest::Client.connect(options, second_options, third_options)
     end
 
+    def connect_sso(login, provider)
+      Rest::Client.connect_sso(login, provider)
+
+      # url = sso_url(login, provider, opts)
+      # RestClient.get url do |response, request, result|
+      #   cookies = response.cookies.dup
+      #   # cookies.delete('GDCAuthSST')
+      #   GoodData.connect(:cookies => response.cookies)
+      # end
+    end
+
     # Disconnect (logout) if logged in
     def disconnect
       Rest::Client.disconnect
@@ -46,47 +57,8 @@ module GoodData
       disconnect
     end
 
-    def sso_url(login, provider, opts = DEFAULT_SSO_OPTIONS)
-      opts = DEFAULT_SSO_OPTIONS.merge(opts)
-
-      ts = DateTime.now.strftime('%s').to_i + opts[:valid]
-      obj = {
-        'email' => login,
-        'validity' => ts
-      }
-
-      json_data = JSON.pretty_generate(obj) + "\n"
-
-      file_json = Tempfile.new('gooddata-sso-json')
-      file_json.write(json_data)
-
-      file_json.rewind
-      file_signed = Tempfile.new('gooddata-sso-signed')
-
-      cmd = "gpg --no-tty --armor --yes -u #{login} --output #{file_signed.path} --sign #{file_json.path}"
-      res = system(cmd)
-      fail 'Unable to sign json' unless res
-
-      file_signed.rewind
-      file_final = Tempfile.new('gooddata-sso-final')
-
-      cmd = "gpg --yes --no-tty --trust-model always --armor --output #{file_final.path} --encrypt --recipient security@gooddata.com #{file_signed.path}"
-      res = system(cmd)
-      fail 'Unable to encrypt json' unless res
-
-      file_final.rewind
-      final = file_final.read
-
-      "#{GoodData::Helpers::AuthHelper.read_server}/gdc/account/customerlogin?sessionId=#{CGI.escape(final)}&serverURL=#{CGI.escape(provider)}&targetURL=#{CGI.escape(opts[:url])}"
-    end
-
-    def connect_sso(login, provider, opts = DEFAULT_SSO_OPTIONS)
-      url = sso_url(login, provider, opts)
-      RestClient.get url do |response, request, result|
-        cookies = response.cookies.dup
-        # cookies.delete('GDCAuthSST')
-        GoodData.connect(:cookies => {'GDCAuthSST' => cookies['GDCAuthSST']})
-      end
+    def sso_url(login, provider, opts = Rest::Client::DEFAULT_SSO_OPTIONS)
+      Rest::Client.sso_url(login, provider, opts)
     end
   end
 end

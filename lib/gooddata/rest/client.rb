@@ -23,6 +23,11 @@ module GoodData
       DEFAULT_SLEEP_INTERVAL = 10
       DEFAULT_POLL_TIME_LIMIT = 5 * 60 * 60 # 5 hours
 
+      DEFAULT_SSO_OPTIONS = {
+        :url => '/gdc/app/account/bootstrap',
+        :valid => 24 * 60 * 60
+      }
+
       #################################
       # Class variables
       #################################
@@ -110,10 +115,14 @@ module GoodData
           client
         end
 
-        def connect_sso(username, provider, opts)
-          RestClient.get(opts[:url]) do |response, request, result|
-            client = Client.new(opts)
-            cookies = response.cookies.dup
+        def connect_sso(login, provider)
+          url = sso_url(login, provider, DEFAULT_SSO_OPTIONS.merge(:url => '/gdc/account/token'))
+
+          RestClient.get(url) do |response, request, result|
+            tt = RestClient.get('https://secure.gooddata.com/gdc/account/token', :cookies => { 'GDCAuthSST' => response.cookies['GDCAuthSST']})
+            puts tt
+            # client = Client.new({:cookies => response.cookies, :sst_token => response.cookies['GDCAuthSST'] })
+            # cookies = response.cookies.dup
             # cookies.delete('GDCAuthSST')
           end
         end
@@ -132,6 +141,40 @@ module GoodData
         # Retry block if exception thrown
         def retryable(options = {}, &block)
           GoodData::Rest::Connection.retryable(options, &block)
+        end
+
+        def sso_url(login, provider, opts = DEFAULT_SSO_OPTIONS)
+          opts = DEFAULT_SSO_OPTIONS.merge(opts)
+
+          ts = DateTime.now.strftime('%s').to_i + opts[:valid]
+          obj = {
+            'email' => login,
+            'validity' => ts
+          }
+
+          json_data = JSON.pretty_generate(obj) + "\n"
+
+          file_json = Tempfile.new('gooddata-sso-json')
+          file_json.write(json_data)
+
+          file_json.rewind
+          file_signed = Tempfile.new('gooddata-sso-signed')
+
+          cmd = "gpg --no-tty --armor --yes -u #{login} --output #{file_signed.path} --sign #{file_json.path}"
+          res = system(cmd)
+          fail 'Unable to sign json' unless res
+
+          file_signed.rewind
+          file_final = Tempfile.new('gooddata-sso-final')
+
+          cmd = "gpg --yes --no-tty --trust-model always --armor --output #{file_final.path} --encrypt --recipient security@gooddata.com #{file_signed.path}"
+          res = system(cmd)
+          fail 'Unable to encrypt json' unless res
+
+          file_final.rewind
+          final = file_final.read
+
+          "#{GoodData::Helpers::AuthHelper.read_server}/gdc/account/customerlogin?sessionId=#{CGI.escape(final)}&serverURL=#{CGI.escape(provider)}&targetURL=#{CGI.escape(opts[:url])}"
         end
 
         alias_method :client, :connection
