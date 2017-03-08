@@ -202,16 +202,16 @@ module GoodData
     end
 
     def settings
-      uri = "#{domain.segments_uri}/clients/#{client_id}/settings"
-      res = client.get(uri)
-      settings = GoodData::Helpers.get_path(res, %w(settingsList items))
-      settings.map do |setting|
-        setting = setting['setting']
-        {
-          name: setting['name'],
-          value: setting['value']
-        }
-      end
+      # uri = "#{domain.segments_uri}/clients/#{client_id}/settings"
+      # res = client.get(uri)
+      # settings = GoodData::Helpers.get_path(res, %w(settingsList items))
+      # settings.map do |setting|
+      #   setting = setting['setting']
+      #   {
+      #     name: setting['name'],
+      #     value: setting['value']
+      #   }
+      # end
     end
   end
 end
