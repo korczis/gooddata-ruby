@@ -100,7 +100,7 @@ module GoodData
         EnsureTechnicalUsersDomain,
         EnsureTechnicalUsersProject,
         SynchronizeLdm,
-#        SynchronizeLabelTypes,
+        SynchronizeLabelTypes,
         SynchronizeAttributeDrillpath,
         SynchronizeProcesses,
         SynchronizeSchedules,
@@ -244,12 +244,12 @@ module GoodData
 
         brick_results = {}
         actions.each_with_index do |action, index|
-          brick_results[action.class.short_name] = results[index]
+          brick_results[action.short_name] = results[index]
         end
 
         {
           actions: actions.map do |action|
-            action.class.short_name
+            action.short_name
           end,
           results: brick_results,
           params: params

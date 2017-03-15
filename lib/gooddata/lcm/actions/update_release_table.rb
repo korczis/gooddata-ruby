@@ -55,12 +55,20 @@ module GoodData
                     path = File.expand_path('../../data/update_lcm_release.sql.erb', __FILE__)
                     default_query = GoodData::Helpers::ErbHelper.template_file(path, placeholders)
 
-                    (params.query && params.query.update) || default_query
+                    temp_query = (params.query && params.query.update) || default_query
+                    placeholders.each do |k, v|
+                      temp_query.gsub!("#{#{k}}", v)
+                    end
+                    temp_query
                   else
                     path = File.expand_path('../../data/insert_into_lcm_release.sql.erb', __FILE__)
                     default_query = GoodData::Helpers::ErbHelper.template_file(path, placeholders)
 
-                    (params.query && params.query.insert) || default_query
+                    temp_query = (params.query && params.query.insert) || default_query
+                    placeholders.each do |k, v|
+                      temp_query.gsub!("#{#{k}}", v) # ->   gsub("#{segment}", "basic")
+                    end
+                    temp_query
                   end
 
           params.ads_client.execute(query)
